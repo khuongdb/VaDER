@@ -707,3 +707,15 @@ class VADER:
 
         return self.model((X_test, W_test))[0].numpy()
 
+    def load_from_path(self, load_path: str) -> None:
+        if load_path is not None:
+            self.model = tf.keras.models.load_model(load_path)
+
+    def set_inputs(self, X_train, W_train, y_train=None):
+        self.X = X_train.astype(self.float_type)
+        if W_train is not None:
+            self.W = W_train.astype(self.float_type)
+        else:
+            self.W = np.ones(X_train.shape, self.float_type)
+        if y_train is not None:
+            self.y = np.array(y_train, self.int_type)
