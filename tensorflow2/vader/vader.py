@@ -228,7 +228,7 @@ class VADER:
         self.n_param = np.sum([np.product([xi for xi in x.shape]) for x in self.model.trainable_variables])
 
         if self.save_path is not None:
-            tf.keras.models.save_model(self.model, self.save_path, save_format="tf")
+            self.model.save_weights(self.save_path)
 
     def fit(self, n_epoch=10, learning_rate=None, verbose=False, exclude_variables=None, early_stopping_ratio=None,
             early_stopping_batch_size=5):
@@ -294,7 +294,7 @@ class VADER:
                     if avg_loss_diff < early_stopping_ratio:
                         break
         if self.save_path is not None:
-            tf.keras.models.save_model(self.model, self.save_path, save_format="tf")
+            self.model.save_weights(self.save_path)
         return 0
 
     def pre_fit(self, n_epoch=10, GMM_initialize=True, learning_rate=None, verbose=False):
@@ -707,9 +707,10 @@ class VADER:
 
         return self.model((X_test, W_test))[0].numpy()
 
-    def load_from_path(self, load_path: str) -> None:
-        if load_path is not None:
-            self.model = tf.keras.models.load_model(load_path)
+    def load_weights(self, load_path: str) -> None:
+        if not load_path:
+            return
+        self.model.load_weights(load_path)
 
     def set_inputs(self, X_train, W_train, y_train=None):
         self.X = X_train.astype(self.float_type)
