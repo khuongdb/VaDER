@@ -216,6 +216,48 @@ python run_vader.py --input_data_file=../vader_data/ADNI/Xnorm.csv
                     --output_path=../vader_results/ADNI_02_25_run_1
 ```
 
+#### VaDER Save/loading
+If you specified the `--save_path` parameter for the `run_vader.py` script, the model will be saved in the filesystem. Then, it can be re-used using the `load_vader.py` script.
+
+**Usage**
+```shell
+python load_vader.py [-h] --input_data_file INPUT_DATA_FILE [--input_weights_file INPUT_WEIGHTS_FILE] [--data_reader_script DATA_READER_SCRIPT] --load_path LOAD_PATH [--seed SEED]
+                     --output_path OUTPUT_PATH
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --input_data_file INPUT_DATA_FILE
+                        a .csv file with input data
+  --input_weights_file INPUT_WEIGHTS_FILE
+                        a .csv file with flags for missing values
+  --data_reader_script DATA_READER_SCRIPT
+                        python script declaring data reader class
+  --load_path LOAD_PATH
+                        model load path
+  --seed SEED           seed
+  --output_path OUTPUT_PATH
+```
+
+**Example:**
+```shell
+python run_vader.py --input_data_file=../vader_data/ADNI/Xnorm.csv
+                    --data_reader_script=tools/addons/data_reader/adni_norm_data.py
+                    --n_epoch=50
+                    --n_consensus=20
+                    --k=3
+                    --n_hidden 102 1
+                    --learning_rate=0.000265
+                    --batch_size=75
+                    --alpha=1
+                    --output_path=../vader_results/ADNI_02_25_run_1
+                    --save_path=../vader_results/ADNI_02_25_run_1/model
+                    
+python load_vader.py --input_data_file=../vader_data/ADNI/Xnorm.csv
+                     --data_reader_script=tools/addons/data_reader/adni_norm_data.py
+                     --load_path=../vader_results/ADNI_02_25_run_1/model
+                     --output_path=../vader_results/ADNI_02_25_run_2
+```
+
 ### Docker integration
 Docker image is located here: https://hub.docker.com/repository/docker/yalchik/vader
 

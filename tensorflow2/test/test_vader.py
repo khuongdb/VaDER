@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import tensorflow as tf
 from vader import VADER
 from vader.utils.data_utils import generate_x_y_for_nonrecur, generate_x_w_y
@@ -72,3 +73,96 @@ class TestVADER:
         assert "samples" in generated_samples
         assert len(generated_samples["clusters"]) == NUM_OF_GENERATED_SAMPLES
         assert generated_samples["samples"].shape == (NUM_OF_GENERATED_SAMPLES, NUM_OF_TIME_POINTS)
+
+    def test_vader_transfer_learning(self):
+        X_train, W_train, y_train = generate_x_w_y(7, 400)
+        # noinspection PyTypeChecker
+        vader = VADER(X_train=X_train, W_train=W_train, y_train=y_train, save_path=None,
+                      n_hidden=[12, 2], k=4, learning_rate=1e-3, output_activation=None, recurrent=True, batch_size=16)
+        # pre-train without latent loss
+        vader.pre_fit(n_epoch=10, verbose=True)
+        # train with latent loss
+        vader.fit(n_epoch=10, verbose=True)
+
+        X_train_ft, W_train_ft, y_train_ft = generate_x_w_y(7, 400)
+        vader.set_inputs(X_train_ft, W_train_ft, y_train_ft)
+        # pre-train without latent loss
+        vader.pre_fit(n_epoch=10, verbose=True)
+        # train with latent loss
+        vader.fit(n_epoch=10, verbose=True)
+
+        # get the clusters
+        clustering = vader.cluster(X_train_ft)
+        assert any(clustering)
+        assert len(clustering) == len(X_train_ft)
+        # get the re-constructions
+        prediction = vader.predict(X_train_ft)
+        assert prediction.shape == X_train_ft.shape
+        # compute the loss given the network
+        loss = vader.get_loss(X_train_ft)
+        assert loss
+        assert "reconstruction_loss" in loss
+        assert "latent_loss" in loss
+        assert loss["reconstruction_loss"] >= 0
+        assert loss["latent_loss"] >= 0
+
+    def test_vader_save_load_transfer_learning(self):
+        save_folder = "test_vader_save_load_transfer_learning"
+        save_path = f"{save_folder}//weights"
+
+        if os.path.exists(save_folder):
+            shutil.rmtree(save_folder)
+
+        X_train, W_train, y_train = generate_x_w_y(7, 400)
+        # noinspection PyTypeChecker
+        vader = VADER(X_train=X_train, W_train=W_train, y_train=y_train, save_path=save_path,
+                      n_hidden=[12, 2], k=4, learning_rate=1e-3, output_activation=None, recurrent=True, batch_size=16)
+        vader.pre_fit(n_epoch=10, verbose=True)
+        vader.fit(n_epoch=10, verbose=True)
+        clustering_before_loading = vader.cluster(X_train)
+
+        X_train_ft, W_train_ft, y_train_ft = generate_x_w_y(7, 400)
+        vader = VADER(X_train=X_train_ft, W_train=W_train_ft, y_train=y_train_ft, save_path=None, n_hidden=[12, 2], k=4,
+                      learning_rate=1e-3, output_activation=None, recurrent=True, batch_size=16)
+        vader.load_weights(save_path)
+        vader.pre_fit(n_epoch=10, verbose=True)
+        vader.fit(n_epoch=10, verbose=True)
+        # get the clusters
+        clustering = vader.cluster(X_train_ft)
+
+        if os.path.exists(save_folder):
+            shutil.rmtree(save_folder)
+
+        assert any(clustering)
+        assert len(clustering) == len(X_train_ft)
+        # get the re-constructions
+        prediction = vader.predict(X_train_ft)
+        assert prediction.shape == X_train_ft.shape
+        # compute the loss given the network
+        loss = vader.get_loss(X_train_ft)
+        assert loss
+        assert "reconstruction_loss" in loss
+        assert "latent_loss" in loss
+        assert loss["reconstruction_loss"] >= 0
+        assert loss["latent_loss"] >= 0
+
+    def test_vader_save_load(self):
+        save_path = "test_vader_save_load"
+        if os.path.exists(save_path):
+            shutil.rmtree(save_path)
+
+        X_train, W_train, y_train = generate_x_w_y(7, 400)
+        # noinspection PyTypeChecker
+        vader = VADER(X_train=X_train, W_train=W_train, y_train=y_train, save_path=save_path,
+                      n_hidden=[12, 2], k=4, learning_rate=1e-3, output_activation=None, recurrent=True, batch_size=16)
+        vader.pre_fit(n_epoch=10, verbose=True)
+        vader.fit(n_epoch=10, verbose=True)
+        clustering_before_loading = vader.cluster(X_train)
+
+        loaded_vader = VADER.load_model(save_path, X_train, W_train, y_train)
+        clustering_after_loading = loaded_vader.cluster(X_train)
+
+        if os.path.exists(save_path):
+            shutil.rmtree(save_path)
+
+        assert list(clustering_before_loading) == list(clustering_after_loading)
