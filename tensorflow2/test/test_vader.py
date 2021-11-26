@@ -147,11 +147,9 @@ class TestVADER:
         assert loss["latent_loss"] >= 0
 
     def test_vader_save_load(self):
-        save_folder = "test_vader_save_load"
-        save_path = f"{save_folder}//weights"
-
-        if os.path.exists(save_folder):
-            shutil.rmtree(save_folder)
+        save_path = "test_vader_save_load"
+        if os.path.exists(save_path):
+            shutil.rmtree(save_path)
 
         X_train, W_train, y_train = generate_x_w_y(7, 400)
         # noinspection PyTypeChecker
@@ -161,12 +159,10 @@ class TestVADER:
         vader.fit(n_epoch=10, verbose=True)
         clustering_before_loading = vader.cluster(X_train)
 
-        vader = VADER(X_train=X_train, W_train=W_train, y_train=y_train, save_path=None, n_hidden=[12, 2], k=4,
-                      learning_rate=1e-3, output_activation=None, recurrent=True, batch_size=16)
-        vader.load_weights(save_path)
-        clustering_after_loading = vader.cluster(X_train)
+        loaded_vader = VADER.load_model(save_path, X_train, W_train, y_train)
+        clustering_after_loading = loaded_vader.cluster(X_train)
 
-        if os.path.exists(save_folder):
-            shutil.rmtree(save_folder)
+        if os.path.exists(save_path):
+            shutil.rmtree(save_path)
 
         assert list(clustering_before_loading) == list(clustering_after_loading)

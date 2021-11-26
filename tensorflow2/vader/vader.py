@@ -1,3 +1,5 @@
+import os
+import pickle
 import tensorflow as tf
 from scipy.optimize import linear_sum_assignment as linear_assignment
 from sklearn import metrics
@@ -228,7 +230,10 @@ class VADER:
         self.n_param = np.sum([np.product([xi for xi in x.shape]) for x in self.model.trainable_variables])
 
         if self.save_path is not None:
-            self.model.save_weights(self.save_path)
+            init_params = {
+                k: v for k, v in locals().items() if k not in ["self", "X_train", "W_train", "y_train", "save_path"]
+            }
+            self.save_model(init_params)
 
     def fit(self, n_epoch=10, learning_rate=None, verbose=False, exclude_variables=None, early_stopping_ratio=None,
             early_stopping_batch_size=5):
@@ -294,7 +299,7 @@ class VADER:
                     if avg_loss_diff < early_stopping_ratio:
                         break
         if self.save_path is not None:
-            self.model.save_weights(self.save_path)
+            self.save_model()
         return 0
 
     def pre_fit(self, n_epoch=10, GMM_initialize=True, learning_rate=None, verbose=False):
@@ -710,7 +715,30 @@ class VADER:
     def load_weights(self, load_path: str) -> None:
         if not load_path:
             return
-        self.model.load_weights(load_path)
+        weights_path = os.path.join(load_path, "weights")
+        self.model.load_weights(weights_path)
+
+    def save_model(self, init_params: dict = None):
+        if not self.save_path:
+            return
+        weights_path = os.path.join(self.save_path, "weights")
+        self.model.save_weights(weights_path)
+
+        if init_params:
+            init_params_path = os.path.join(self.save_path, "init_params.pkl")
+            with open(init_params_path, 'wb') as f:
+                pickle.dump(init_params, f)
+
+    @staticmethod
+    def load_model(load_path: str, X_train, W_train=None, y_train=None):
+        if not load_path:
+            return None
+        init_params_path = os.path.join(load_path, "init_params.pkl")
+        with open(init_params_path, 'rb') as f:
+            init_params = pickle.load(f)
+        vader = VADER(X_train, W_train=W_train, y_train=y_train, **init_params)
+        vader.load_weights(load_path)
+        return vader
 
     def set_inputs(self, X_train, W_train, y_train=None):
         self.X = X_train.astype(self.float_type)
