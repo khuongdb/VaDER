@@ -17,7 +17,7 @@ setuptools.setup(
         "numpy",
         "pandas",
         "scipy",
-        "sklearn",
+        "scikit-learn",
         "tensorflow",
         "tensorflow_addons",
         "matplotlib",

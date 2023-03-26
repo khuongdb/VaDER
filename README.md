@@ -213,11 +213,11 @@ python run_vader.py --input_data_file=../vader_data/ADNI/Xnorm.csv
                     --learning_rate=0.000265
                     --batch_size=75
                     --alpha=1
-                    --output_path=../vader_results/ADNI_02_25_run_1
+                    --output_path=../vader_results/ADNI_2023_03_26_run_1
 ```
 
 #### VaDER Save/loading
-If you specified the `--save_path` parameter for the `run_vader.py` script, the model will be saved in the filesystem. Then, it can be re-used using the `load_vader.py` script.
+If you specified the `--save_path` parameter for the `run_vader.py` script, the model will be saved in the filesystem. Then, it can be re-used using the `load_vader.py` script. You have to specify the same consensus clustering as it was used for training.
 
 **Usage**
 ```shell
@@ -232,6 +232,8 @@ optional arguments:
                         a .csv file with flags for missing values
   --data_reader_script DATA_READER_SCRIPT
                         python script declaring data reader class
+  --n_consensus N_CONSENSUS
+                    number of repeats for consensus clustering
   --load_path LOAD_PATH
                         model load path
   --seed SEED           seed
@@ -254,6 +256,7 @@ python run_vader.py --input_data_file=../vader_data/ADNI/Xnorm.csv
                     
 python load_vader.py --input_data_file=../vader_data/ADNI/Xnorm.csv
                      --data_reader_script=tools/addons/data_reader/adni_norm_data.py
+                     --n_consensus=20
                      --load_path=../vader_results/ADNI_02_25_run_1/model
                      --output_path=../vader_results/ADNI_02_25_run_2
 ```

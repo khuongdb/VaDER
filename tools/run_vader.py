@@ -91,11 +91,11 @@ if __name__ == "__main__":
         train_reconstruction_loss_repeats = []
         train_latent_loss_repeats = []
         for j in range(args.n_consensus):
-            seed = f"{args.seed}{i}{j}" if args.seed else None
+            seed = f"{args.seed}{j}" if args.seed else None
             # noinspection PyTypeChecker
             vader = VADER(X_train=input_data, W_train=input_weights, k=args.k, n_hidden=n_hidden,
                           learning_rate=args.learning_rate, batch_size=args.batch_size, alpha=args.alpha,
-                          seed=args.seed, save_path=args.save_path, output_activation=None, recurrent=True)
+                          seed=args.seed, save_path=f"{args.save_path}_{j}", output_activation=None, recurrent=True)
             vader.pre_fit(n_epoch=10, verbose=False)
             vader.fit(n_epoch=args.n_epoch, verbose=False, early_stopping_ratio=args.early_stopping_ratio,
                       early_stopping_batch_size=args.early_stopping_batch_size)
@@ -115,7 +115,7 @@ if __name__ == "__main__":
         latent_loss = np.mean(train_latent_loss_repeats)
         loss_history_pdf.close()
     else:
-        seed = f"{args.seed}{i}" if args.seed else None
+        seed = f"{args.seed}" if args.seed else None
         # noinspection PyTypeChecker
         vader = VADER(X_train=input_data, W_train=input_weights, k=args.k, n_hidden=n_hidden,
                       learning_rate=args.learning_rate, batch_size=args.batch_size, alpha=args.alpha,

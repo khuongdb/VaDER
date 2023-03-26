@@ -30,6 +30,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_reader_script", type=str, help="python script declaring data reader class")
     parser.add_argument("--load_path", type=str, required=True, help="model load path")
     parser.add_argument("--seed", type=int, help="seed")
+    parser.add_argument("--n_consensus", type=int, default=1, help="number of repeats for consensus clustering")
     parser.add_argument("--output_path", type=str, required=True)
     args = parser.parse_args()
 
@@ -67,7 +68,25 @@ if __name__ == "__main__":
     x_label = data_reader.time_point_meaning
     ids_list = data_reader.ids_list
 
-    vader = VADER.load_model(args.load_path, input_data, input_weights)
+    vader = None
+    if args.n_consensus and args.n_consensus > 1:
+        y_pred_repeats = []
+        effective_k_repeats = []
+        for j in range(args.n_consensus):
+            vader_j = VADER.load_model(f"{args.load_path}_{j}", input_data, input_weights)
+            if j == 0:
+                vader = vader_j
+            clustering = vader_j.cluster(input_data, input_weights)
+            effective_k = len(Counter(clustering))
+            y_pred_repeats.append(clustering)
+            effective_k_repeats.append(effective_k)
+        effective_k = np.mean(effective_k_repeats)
+        num_of_clusters = round(float(effective_k))
+        clustering = ClusteringUtils.consensus_clustering(y_pred_repeats, num_of_clusters)
+    else:
+        vader = VADER.load_model(args.load_path, input_data, input_weights)
+        clustering = vader.cluster(input_data, input_weights)
+
     n_hidden = [str(layer_size) for layer_size in vader.n_hidden]
     report_suffix = f"k{str(vader.K)}" \
                     f"_n_hidden{'_'.join(n_hidden)}" \
@@ -77,7 +96,6 @@ if __name__ == "__main__":
                     f"_seed{str(args.seed)}"
     plot_file_path = os.path.join(args.output_path, f"z_scores_trajectories_{report_suffix}.pdf")
     clustering_file_path = os.path.join(args.output_path, f"clustering_{report_suffix}.csv")
-    clustering = vader.cluster(input_data, input_weights)
     pd.Series(list(clustering), index=ids_list, dtype=np.int64, name='Cluster').to_csv(clustering_file_path)
 
     if features and time_points:
