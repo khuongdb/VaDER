@@ -1,9 +1,0 @@
-numpy
-pandas
-scipy
-scikit-learn
-tensorflow
-tensorflow_addons
-matplotlib
-optuna
-PyPDF2
